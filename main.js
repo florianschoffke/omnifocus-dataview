@@ -75,20 +75,19 @@ class OmniFocusDataviewPlugin extends Plugin {
 
     fetchTasksFromProject(projectName) {
         try {
-            // JavaScript for Automation (JXA) script to fetch projects
-            const jxaScript = `
+            const getAllTasksFromProject = (projectName) => {
                 const allProjects = Application('OmniFocus').defaultDocument.flattenedProjects();
-                const project = allProjects.find(p => p.name() === '${projectName}');
+                const project = allProjects.find(p => p.name() === projectName);
                 if (!project) throw new Error('Project not found');
                 const tasks = project.tasks().map(task => ({
                     name: task.name(),
                     id: task.id()  // Add task ID for linking
                 }));
                 JSON.stringify(tasks);
-            `;
+            };
 
             console.log(`Executing script for project: ${projectName}`);
-            const result = execSync(`osascript -l JavaScript -e "${jxaScript}"`, { encoding: 'utf8' });
+            const result = getAllTasksFromProject(projectName)
             return JSON.parse(result);
         } catch (error) {
             console.error('Error fetching tasks from OmniFocus:', error);
@@ -141,21 +140,21 @@ class OmniFocusDataviewPlugin extends Plugin {
 
     listProjectsInFolder(folderName) {
         try {
-            // JavaScript for Automation (JXA) script to list projects in a folder
-            const jxaScript = `
+            const getAllProjectsInFolder = (folderName) => {
                 const app = Application('OmniFocus');
                 const doc = app.defaultDocument;
-                const folder = doc.flattenedFolders.byName('${folderName}');
+                const folder = doc.flattenedFolders.byName(folderName);
                 if (!folder) throw new Error('Folder not found');
                 const projects = folder.projects().map(project => ({
                     name: project.name(),
                     id: project.id()  // Add project ID for linking
                 }));
                 JSON.stringify(projects);
-            `;
+                return tasksWithTags;
+            };
 
             console.log(`Executing script for folder: ${folderName}`);
-            const result = execSync(`osascript -l JavaScript -e "${jxaScript}"`, { encoding: 'utf8' });
+            const result = getAllProjectsInFolder(folderName)
             return JSON.parse(result);
         } catch (error) {
             console.error('Error listing projects from OmniFocus:', error);
