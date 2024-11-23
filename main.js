@@ -1,5 +1,6 @@
 const { Plugin } = require('obsidian');
 const { execSync } = require('child_process');
+const { run } = require('@jxa/run');
 
 class OmniFocusDataviewPlugin extends Plugin {
     onload() {
@@ -95,6 +96,49 @@ class OmniFocusDataviewPlugin extends Plugin {
         }
     }
 
+    filterTasksByFolder(allTasks, folderNames) {
+        const isProjectInFolders = (project, folderNames) => {
+            let currentContainer = project;
+            while (currentContainer) {
+                const containerName = currentContainer.name();
+                if (containerName === "OmniFocus") {
+                    break;
+                }
+                if (folderNames.includes(containerName)) {
+                    return true;
+                }
+                // Move up the hierarchy
+                let nextContainer = null;
+                if (typeof currentContainer.containingFolder === 'function') {
+                    nextContainer = currentContainer.container();
+                } else if (typeof currentContainer.container === 'function') {
+                    nextContainer = currentContainer.container();
+                } else {
+                    break;
+                }
+                if (nextContainer && nextContainer !== currentContainer) {
+                    currentContainer = nextContainer;
+                } else {
+                    break;
+                }
+            }
+            return false;
+        };
+
+        const filterTasksByFolders = (tasks, folderNames) => {
+            return tasks.filter(task => {
+                const project = doc.flattenedProjects().find(p => p.id() === task.projectId);
+                if (project) {
+                    return isProjectInFolders(project, folderNames);
+                }
+                return false;
+            });
+        };
+
+        const result = filterTasksByFolders(allTasks, folderNames);
+        return JSON.parse(result);
+    }
+
     listProjectsInFolder(folderName) {
         try {
             // JavaScript for Automation (JXA) script to list projects in a folder
@@ -119,23 +163,23 @@ class OmniFocusDataviewPlugin extends Plugin {
         }
     }
 
-    fetchTasksWithTag(tagName) {
+    fetchTasksWithTag(tags) {
         try {
-            // JavaScript for Automation (JXA) script to fetch tasks with a tag
-            const jxaScript = `
-                const app = Application('OmniFocus');
-                const doc = app.defaultDocument;
-                const tag = doc.flattenedTags.byName('${tagName}');
-                if (!tag) throw new Error('Tag not found');
-                const tasks = tag.tasks().map(task => ({
-                    name: task.name(),
-                    id: task.id()  // Add task ID for linking
-                }));
-                JSON.stringify(tasks);
-            `;
-
-            console.log(`Executing script for tag: ${tagName}`);
-            const result = execSync(`osascript -l JavaScript -e "${jxaScript}"`, { encoding: 'utf8' });
+            const getAllTasksWithTags = (tags) => {
+                const tasksWithTags = [];
+                tags.forEach(tagName => {
+                    const tag = doc.flattenedTags().find(t => t.name() === tagName);
+                    if (tag) {
+                        const tasks = tag.tasks().map(task => ({
+                            name: task.name(),
+                            id: task.id(),
+                        }));
+                        tasksWithTags.push(...tasks);
+                    }
+                });
+                return tasksWithTags;
+            };
+            const result = getAllTasksWithTags(tags);
             return JSON.parse(result);
         } catch (error) {
             console.error('Error fetching tasks from OmniFocus:', error);

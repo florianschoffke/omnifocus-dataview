@@ -1,0 +1,9 @@
+{
+  "name": "omnifocus-dataview",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "license": "ISC",
+  "dependencies": {
+    "@jxa/run": "^1.0.0"
+  }
+}
